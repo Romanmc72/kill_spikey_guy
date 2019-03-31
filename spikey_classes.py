@@ -4,7 +4,7 @@ import sys
 import math as m
 #import time as tm
 
-class game:
+class Game:
     def __init__(self, background, play=True, characters=[]):
         pg.init()
         
@@ -20,7 +20,7 @@ class game:
         print('Game Over')
         sys.exit()
 
-class character:
+class Character:
     """
     This class defines a character in the game.
     It is the sub class that will be inherited
@@ -35,7 +35,7 @@ class character:
                  lives = 3,
                  speed = 1,
                  scale = 1,
-                 appear = True
+                 appear = True,
                  vector = 0):
         self.x = x
         self.y = y
@@ -57,7 +57,7 @@ class character:
     def _update(self):
         
 
-class player(character):
+class Player(Character):
     """
     This class defines the player of the game
     it inherits the character class
@@ -72,7 +72,7 @@ class player(character):
                  y = 300,
                  weapon = 0,
                  vector = 0):
-        character__init__(self, x, y, lives, speed, scale, image, appear, vector)
+        Character.__init__(self, x, y, lives, speed, scale, image, appear, vector)
         self.w = self.image.get_width()
         self.h = self.image.get_height()
         self.weapon = weapon
