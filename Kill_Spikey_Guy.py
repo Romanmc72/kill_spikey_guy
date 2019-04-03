@@ -7,10 +7,10 @@ import time as tm
 pygame.init()   #################
 #################################
 ###Images Representing Objects###
-PlayerImg = pygame.image.load("/home/pi/Desktop/circle.png")
-FieldImg = pygame.image.load("/home/pi/Desktop/room.png")
-SpikeyGuyImg = pygame.image.load("/home/pi/Desktop/sharp.png")
-FistImg =  pygame.image.load("/home/pi/Desktop/fist.png")
+PlayerImg = pygame.image.load("./images/circle.png")
+FieldImg = pygame.image.load("./images/room.png")
+SpikeyGuyImg = pygame.image.load("./images/sharp.png")
+FistImg =  pygame.image.load("./images/fist.png")
 
 ScreenHeight = FieldImg.get_height()
 ScreenWidth = FieldImg.get_width()
@@ -45,8 +45,8 @@ class Player(pygame.sprite.Sprite):
          self.angle = 1
          self.size = 1
          self.image = PlayerImg
-    def __str__(self):
-        return "[x="+self.x+";"+"y="+self.y+";"+"lives="+self.lives+";"+"weapon="+self.weapon+";"+"speed="+self.speed+";"+"angle="+self.angle+";"+"size="+self.size+"]"
+#   def __str__(self):
+#        return "[x="+self.x+";"+"y="+self.y+";"+"lives="+self.lives+";"+"weapon="+self.weapon+";"+"speed="+self.speed+";"+"angle="+self.angle+";"+"size="+self.size+"]"
     def Rotate(self):
         x1 = pygame.mouse.get_pos()[0]
         x2 = self.x
