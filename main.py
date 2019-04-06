@@ -1,7 +1,12 @@
 import pygame as pg
-import spikey_classes
+import spikey_classes as sc
 
 
-game = spikey_classes.Game(background="./images/room.png")
-my_player = spikey_classes.Player(image="./images/circle.png")
+game = sc.Game(background="./images/room.png")
+my_player = sc.Player(image="./images/circle.png")
+my_enemy = sc.Enemy(image="./images/sharp.png")
 
+game.add_character(my_player)
+game.add_character(my_enemy)
+
+game.play()

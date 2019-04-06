@@ -8,15 +8,9 @@ ScreenHeight = FieldImg.get_height()
 ScreenWidth = FieldImg.get_width()
 Screen = pg.display.set_mode((ScreenWidth, ScreenHeight))
 pg.display.set_caption('Look out for those sharp guys')
-PlayerImg = pg.image.load("./images/fist.png")
-
-
-# Player_h = PlayerImg.get_height()
-# Player_w = PlayerImg.get_width()
-# max_offset_h = (Player_h*(2**.5)-Player_h)/2
-# max_offset_w = (Player_w*(2**.5)-Player_w)/2
-
-
+PlayerImg = pg.image.load("./images/circle.png")
+movement = {'x': 0, 'y': 0}
+final_position = [0, 0]
 player_pos = PlayerImg.get_rect()
 
 done = False
@@ -27,6 +21,27 @@ while not done:
         elif event.type == pg.KEYDOWN:
             if event.key == pg.K_ESCAPE:
                 done = True
+            elif event.key in [pg.K_d]:
+                movement['x'] = 1
+            elif event.key in [pg.K_a]:
+                movement['x'] = -1
+            elif event.key in [pg.K_s]:
+                movement['y'] = 1
+            elif event.key in [pg.K_w]:
+                movement['y'] = -1
+        elif event.type == pg.KEYUP:
+            if event.key in [pg.K_d]:
+                movement['x'] = 0
+            elif event.key in [pg.K_a]:
+                movement['x'] = 0
+            elif event.key in [pg.K_s]:
+                movement['y'] = 0
+            elif event.key in [pg.K_w]:
+                movement['y'] = 0
+
+    xplus = final_position[0] + movement['x']
+    yplus = final_position[1] + + movement['y']
+    final_position = [xplus, yplus]
 
     Screen.fill(0)
     Screen.blit(FieldImg, (0, 0))
@@ -43,8 +58,8 @@ while not done:
     offset_y = original_center[1] - rotated_center[1]
 
     rotated_pos = (
-        player_pos[0] + offset_x,
-        player_pos[1] + offset_y)
+        player_pos[0] + offset_x + final_position[0],
+        player_pos[1] + offset_y + final_position[1])
     Screen.blit(rotated_img, rotated_pos)
     pg.display.flip()
 
