@@ -32,16 +32,38 @@ def get_angle(origin_xy: tuple, satellite_xy: tuple, degrees: bool=True) -> floa
     """
     x1, y1 = origin_xy
     x2, y2 = satellite_xy
-    conversion = ((180 / m.pi) % 360)
-    return m.atan2(y2 - y1, x2 - x1) * (-conversion if degrees else 1)
+    conversion = 180 / m.pi
+    return (m.atan2(y2 - y1, x2 - x1) * (-conversion if degrees else 1)) % (360 if degrees else (2 * m.pi))
 
 
-def is_inside(point: tuple, bounds) -> bool:
+def is_inside(point: tuple, bounds: object) -> bool:
+    """
+    :param point:
+        an (x, y) coordinate tuple
+    :param bounds:
+        a Bounds object
+    :return:
+        bool
+        whether or not the specified point is within the bounds
+    """
     return (bounds.left <= point[0] <= bounds.right and
             bounds.bottom <= point[1] <= bounds.top)
 
 
 def is_touching(obj1: object, obj2: object) -> bool:
+    """
+    :param obj1:
+        an object that contains a Bounds class
+        object as one of its attributes
+    :param obj2:
+        an object that contains a Bounds class
+        object as one of its attributes
+    :return:
+        bool
+        whether or not the first object is touching (or is inside of)
+        the second object. Checks each boundary corner of obj1 to see
+        if it is inside of or touching the boundaries of obj2
+    """
     touches = []
     for bound in obj1.bounds:
         touches.append(is_inside(bound, obj2))
@@ -49,6 +71,19 @@ def is_touching(obj1: object, obj2: object) -> bool:
 
 
 def is_outside(obj1: object, obj2: object) -> bool:
+    """
+    :param obj1:
+        an object that contains a Bounds class
+        object as one of its attributes
+    :param obj2:
+        an object that contains a Bounds class
+        object as one of its attributes
+    :return:
+        bool
+        whether or not the first object is NOT touching (or is inside of)
+        the second object. Checks each boundary corner of obj1 to see
+        if it is NOT inside of or touching the boundaries of obj2
+    """
     touches = []
     for bound in obj1.bounds:
         touches.append(is_inside(bound, obj2))
@@ -92,9 +127,9 @@ def get_orbit(planet, satellite, ratio_from_center=0.5, track=True):
 def get_distance(point_a: tuple, point_b: tuple) -> float:
     """
     :param point_a:
-        x,y tuple representing the first object
+        (x, y) tuple representing the first object
     :param point_b:
-        x,y tuple representing the second object
+        (x, y) tuple representing the second object
     :return:
         using the pythagorean theorem we get the distance
         ((x1 - x2)^2 + (y1 - y2)^2)^0.5
@@ -111,23 +146,24 @@ def is_facing(obj1: object, obj2: object, rng: float) -> bool:
     :param obj2:
         takes another _Character object
     :param rng:
-        float in degrees (0-180] (not radians)
-        will be added + and - to the first character's angle,
+        float in degrees (not radians); 0 <= rng <= 180
+        rng will be added + and - to the first character's angle,
         so 180 would mean no matter what it would consider
-        character 1 to be facing character 2
+        character 1 to be facing character 2,
+        and 0 would mean the angle would have to match EXACTLY
+        (almost impossible since points are not measured continuously)
     :return:
         True or False
         whether or not the first character's angle attribute
         points in the direction of the second character's center within a range
     """
-    angle = get_angle(obj1.center, obj2.center) % 360
+    angle_between = get_angle(obj1.center, obj2.center) % 360
     if 0 < rng < 180:
-
-        return
+        return abs(obj1.angle - angle_between) <= rng
     elif rng >= 180:
         return True
     elif rng == 0:
-        return obj1.angle == angle
+        return obj1.angle == angle_between
     else:
-        raise Exception
+        raise ValueError('Please use a rng where 0 <= rng')
 

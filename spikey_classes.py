@@ -5,19 +5,95 @@ import time
 import math as m
 import numpy.random as r
 import re
+import os
 # from pg.locals import *
-# TODO fix angle on is facing
+# TODO generate enemies after they die
+# TODO set varying levels of comebacks after score is calculated
+# TODO create weapons
+# TODO create projectiles
+# TODO create heat-seeking projectiles
+
+
+def get_package_option(spacing=10):
+    options = os.listdir('./images')
+    num_options = len(options)
+    font = pg.font.SysFont('Times New Roman', 25)
+    rendered_options = [font.render(f'[{option_number}] : {option}', False, (255, 255, 0))
+                        for option_number, option in
+                        enumerate(options)]
+    rendered_option_height = rendered_options[0].get_height()
+    longest_option = max([option.get_width() for option in rendered_options])
+    w = longest_option + 2 * spacing
+    h = (rendered_option_height * num_options) + (spacing * (num_options + 1))
+    screen = pg.display.set_mode((w, h))
+    screen.fill(0)
+    [screen.blit(option, (spacing, spacing + (option_number * rendered_option_height)))
+     for option_number, option in
+     enumerate(rendered_options)]
+    pg.display.flip()
+    nothing_pressed = True
+    while nothing_pressed:
+        for event in pg.event.get():
+            if event.type == pg.KEYDOWN:
+                if event.key == pg.K_ESCAPE:
+                    pg.quit()
+                    sys.exit()
+                elif event.key == pg.K_0 and num_options > 0:
+                    option_number = 0
+                    nothing_pressed = False
+                elif event.key == pg.K_1 and num_options > 1:
+                    option_number = 1
+                    nothing_pressed = False
+                elif event.key == pg.K_2 and num_options > 2:
+                    option_number = 2
+                    nothing_pressed = False
+                elif event.key == pg.K_3 and num_options > 3:
+                    option_number = 3
+                    nothing_pressed = False
+                elif event.key == pg.K_4 and num_options > 4:
+                    option_number = 4
+                    nothing_pressed = False
+                elif event.key == pg.K_5 and num_options > 5:
+                    option_number = 5
+                    nothing_pressed = False
+                elif event.key == pg.K_6 and num_options > 6:
+                    option_number = 6
+                    nothing_pressed = False
+                elif event.key == pg.K_7 and num_options > 7:
+                    option_number = 7
+                    nothing_pressed = False
+                elif event.key == pg.K_8 and num_options > 8:
+                    option_number = 8
+                    nothing_pressed = False
+                elif event.key == pg.K_9 and num_options == 10:
+                    option_number = 9
+                    nothing_pressed = False
+    return options[option_number]
+
+
+class Package:
+    """
+    which set of images will be imported for this game?
+    set the name as the name of the package you wish to import.
+    Packages are listed in the './images/ folder.
+    """
+    def __init__(self):
+        self.name = get_package_option()
+        self.enemy = f'./images/{self.name}/enemy.png'
+        self.player = f'./images/{self.name}/player.png'
+        self.background = f'./images/{self.name}/background.png'
+        self.fist = f'./images/{self.name}/fist.png'
 
 
 class Game:
     def __init__(self,
-                 background: str,
                  done: bool = False,
                  characters: list = [],
                  mean: bool = False,
                  explicit: bool = False) -> None:
         pg.init()
-        self.background = pg.image.load(background)
+        self.package = Package()
+        self.background = pg.image.load(self.package.background)
         self.done = done
         self.characters = characters
         self.mean = mean
@@ -37,6 +113,9 @@ class Game:
                                  w=self.w,
                                  h=self.h)
         self.center = (self.x + (self.w / 2), self.y + (self.h / 2))
+        self.center_x = self.center[0]
+        self.center_y = self.center[1]
+        self.score = 0
 
     def add_character(self, character):
         self.characters.append(character)
@@ -53,15 +132,19 @@ class Game:
             for life in range(player.lives):
                 self.screen.blit(pg.transform.scale(player.image, (20, 20)), (25 + 20 * life, 25))
         for enemy in enemies:
-            enemy.update(self.screen, players)
+            self.score += enemy.update(self.screen, players)
             for life in range(enemy.lives):
                 self.screen.blit(pg.transform.scale(enemy.image, (20, 20)), (self.w - 25 - 20 * life, 25))
-        # [enemy.update(self.screen, players) for enemy in enemies]
         if not players:
             self.done = True
         for player in players:
             if not player.alive:
                 self.done = True
+
+    def show_score(self):
+        font = pg.font.SysFont('Arial', 30)
+        text = font.render(f"Score: {self.score}", False, (0, 0, 0))
+        self.screen.blit(text, (self.center_x, 25))
 
     def play(self):
         while not self.done:
@@ -74,7 +157,9 @@ class Game:
                         self.done = True
             self.screen.fill(0)
             self.screen.blit(self.background, (0, 0))
+            self.screen.blit(self.background, (0, 0))
             self.update_characters()
+            self.show_score()
             pg.display.flip()
 
         self.__end__()
@@ -103,6 +188,14 @@ class Game:
             elif event.key == pg.K_SPACE:
                 self.key_state['space'] = False
 
+    # def hurl_insults(self):
+
+    # def hurl_meh(self):
+
+    # def hurl_impressed(self):
+
+    # def hurl_damns_son(self):
+
     def __end__(self):
         insults = ['Maybe next time']
         if self.mean:
@@ -128,7 +221,7 @@ class Game:
                         'fuck you motherfucker',
                         'u piece of shit']
         font = pg.font.SysFont('Times New Roman', 25)
-        game_over = font.render('GAME OVER', False, (255, 255, 0))
+        game_over = font.render(f'GAME OVER, score:{self.score}', False, (255, 255, 0))
         esc = font.render('Press \'esc\' to exit.', False, (255, 255, 0))
         drop = game_over.get_height() + 10
         words = [font.render(insult, False, (255, 255, 0)) for insult in [word for word in re.split(r'\s', (r.choice(insults)))]]
@@ -277,7 +370,8 @@ class Player(_Character):
     """
     def __init__(self,
                  image: str,
-                 speed: int = 3,
+                 fist: str,
+                 speed: int = 5,
                  scale: float = 1.0,
                  appear: bool = True,
                  x: float = 300.0,
@@ -286,8 +380,8 @@ class Player(_Character):
                  weapons: list = None,
                  angle: float = 0) -> None:
         _Character.__init__(self, x, y, lives, speed, scale, image, appear, angle)
+        self.fist = pg.image.load(fist)
         self.weapons = weapons
-        self.fist = pg.image.load('./images/fist.png')
         self.fist_length = self.fist.get_width()
         self.is_player = True
         self.is_enemy = False
@@ -312,7 +406,7 @@ class Player(_Character):
         for enemy in enemies:
             if self.appear:
                 if self.is_touching(enemy):
-                    self.get_hurt(1, recovery=1, danger=enemy, blowback=50)
+                    self.get_hurt(1, recovery=1, danger=enemy, blowback=20)
         self.is_alive()
         self._get_movement(keys)
         self._re_bound()
@@ -345,11 +439,22 @@ class Player(_Character):
 
 
 class Enemy(_Character):
+    """
+    an extension of the _Character class
+    whose movement follows the Player object
+    within the Game object and whose
+    get_hurt() method is called based on intersection
+    with certain player attributes and methods.
+
+    Enemy will spawn randomly within the screen
+    unless otherwise specified when using the
+    add_to_screen() method
+    """
     def __init__(self,
                  image,
                  x=0,
                  y=0,
-                 lives=1,
+                 lives=3,
                  speed=2,
                  scale=1,
                  appear=True,
@@ -357,15 +462,16 @@ class Enemy(_Character):
         _Character.__init__(self, x, y, lives, speed, scale, image, appear, angle)
         self.is_player = False
         self.is_enemy = True
+        self.point = False
 
-    def add_to_screen(self, screen):
+    def add_to_screen(self, screen, x=None, y=None):
         self.screen = screen
         self.left_limit = screen.bounds.left
         self.right_limit = screen.bounds.right
         self.top_limit = screen.bounds.top
         self.bottom_limit = screen.bounds.bottom
-        self.x = r.choice(self.right_limit - self.w)
-        self.y = r.choice(self.top_limit - self.h)
+        self.x = (r.choice(self.right_limit - self.w) if x is None else x)
+        self.y = (r.choice(self.top_limit - self.h) if y is None else y)
 
     def follow(self, other):
         if other.is_player:
@@ -380,14 +486,40 @@ class Enemy(_Character):
 
     def update(self, screen, others):
         for other in others:
-            #print(f"|\tpunch:{other.punching}\t|\tface:{fn.is_facing(other, self, 45)}\t|\trange:{fn.get_distance(self.center, other.center) <= other.fist_length + ((other.w + self.w) / 2)}\t|")
             if other.punching and \
                     fn.is_facing(other, self, 45) and \
                     fn.get_distance(self.center, other.center) <= other.fist_length + ((other.w + self.w) / 2):
-                    self.get_hurt(damage=0, recovery=1, danger=other, blowback=50)
+                    self.get_hurt(damage=1, recovery=1, danger=other, blowback=50)
+                    self.point = True
             if self.appear:
                 self.is_alive()
         self.follow(other)
         self._re_bound()
         screen.blit(self.image, (self.x, self.y))
+        if self.point:
+            self.point = False
+            return 1
+        else:
+            return 0
 
+
+class Projectile:
+    """
+    These are intended to be launched from
+    some fixed point to another point
+    that is either fixed or moving
+    """
+    def __init__(self, image, start, end, tracking=False, speed=1):
+        self.image = pg.image.load(image)
+        self.start = start
+        self.end = end
+        self.tracking = tracking
+        self.speed = speed
+        self.x = start[0]
+        self.y = start[1]
+        self.w = self.image.get_width()
+        self.h = self.image.get_height()
+        self.bounds = Boundaries(x=self.x,
+                                 y=self.y,
+                                 w=self.w,
+                                 h=self.h)

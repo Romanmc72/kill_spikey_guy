@@ -1,9 +1,9 @@
 import spikey_classes as sc
 
 
-game = sc.Game(background="./images/room.png")
-my_player = sc.Player(image="./images/circle.png", speed=5)
-my_enemy = sc.Enemy(image="./images/sharp.png", lives=3, speed=1)
+game = sc.Game(mean=True, explicit=True)
+my_player = sc.Player(game.package.player, game.package.fist)
+my_enemy = sc.Enemy(game.package.enemy)
 
 game.add_character(my_player)
 game.add_character(my_enemy)
