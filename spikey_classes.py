@@ -3,23 +3,25 @@ import functions as fn
 import sys
 import time
 import math as m
-# import numpy.random as r
+import numpy.random as r
+import re
 # from pg.locals import *
-# TODO add barriers and obstacles
-# TODO make the fist kill the spikey guy
+# TODO fix angle on is facing
 
 
 class Game:
     def __init__(self,
                  background: str,
                  done: bool = False,
-                 characters: list = []) -> None:
+                 characters: list = [],
+                 mean: bool = False,
+                 explicit: bool = False) -> None:
         pg.init()
         self.background = pg.image.load(background)
         self.done = done
         self.characters = characters
-        # self.players = []
-        # self.enemies = []
+        self.mean = mean
+        self.explicit = explicit
         self.x = 0
         self.y = 0
         self.h = self.background.get_height()
@@ -34,7 +36,8 @@ class Game:
                                  y=self.y,
                                  w=self.w,
                                  h=self.h)
-        
+        self.center = (self.x + (self.w / 2), self.y + (self.h / 2))
+
     def add_character(self, character):
         self.characters.append(character)
         character.add_to_screen(self)
@@ -49,7 +52,11 @@ class Game:
             player.update(self.screen, self.key_state, enemies)
             for life in range(player.lives):
                 self.screen.blit(pg.transform.scale(player.image, (20, 20)), (25 + 20 * life, 25))
-        [enemy.update(self.screen, players) for enemy in enemies]
+        for enemy in enemies:
+            enemy.update(self.screen, players)
+            for life in range(enemy.lives):
+                self.screen.blit(pg.transform.scale(enemy.image, (20, 20)), (self.w - 25 - 20 * life, 25))
+        # [enemy.update(self.screen, players) for enemy in enemies]
         if not players:
             self.done = True
         for player in players:
@@ -65,7 +72,7 @@ class Game:
                 elif event.type == pg.KEYDOWN:
                     if event.key == pg.K_ESCAPE:
                         self.done = True
-
+            self.screen.fill(0)
             self.screen.blit(self.background, (0, 0))
             self.update_characters()
             pg.display.flip()
@@ -97,6 +104,48 @@ class Game:
                 self.key_state['space'] = False
 
     def __end__(self):
+        insults = ['Maybe next time']
+        if self.mean:
+            insults += ['You really suck at this',
+                        'The worst performance in the history of performances. Ever.',
+                        'Awful',
+                        'Disgraceful!',
+                        'You call that trying?',
+                        'BOOOOO YOU STINK!!!',
+                        'I\'ve never seen worse',
+                        'Nice try. NOT!',
+                        'ha ha',
+                        'Loser',
+                        'You gonna cry? :(',
+                        'It\'s like you don\'t even care...']
+        if self.explicit:
+            insults += ['Eat it bitch',
+                        'Fuck outta here if you gonna sucka dick',
+                        'Choked a big one',
+                        'u suck ass',
+                        'shitty performance',
+                        'Bitch',
+                        'fuck you motherfucker',
+                        'u piece of shit']
+        font = pg.font.SysFont('Times New Roman', 25)
+        game_over = font.render('GAME OVER', False, (255, 255, 0))
+        esc = font.render('Press \'esc\' to exit.', False, (255, 255, 0))
+        drop = game_over.get_height() + 10
+        words = [font.render(insult, False, (255, 255, 0)) for insult in [word for word in re.split(r'\s', (r.choice(insults)))]]
+        words.append(esc)
+        self.done = False
+        while not self.done:
+            for event in pg.event.get():
+                self.get_keys(event=event)
+                if event.type == pg.QUIT:
+                    self.done = True
+                elif event.type == pg.KEYDOWN:
+                    if event.key == pg.K_ESCAPE:
+                        self.done = True
+            self.screen.fill(0)
+            self.screen.blit(game_over, (5, 5))
+            [self.screen.blit(words[word], (5, words[word].get_height() * word + drop)) for word in range(len(words))]
+            pg.display.flip()
         pg.quit()
         print('Game Over')
         sys.exit()
@@ -177,18 +226,23 @@ class _Character:
                                  h=self.h)
 
     def _move(self, x_move, y_move):
+        # Keep player on screen on x-axis
         if self.x + x_move * self.speed < self.left_limit:
             self.x = self.left_limit
         elif self.x + self.w + x_move * self.speed > self.right_limit:
             self.x = self.right_limit - self.w
         else:
             self.x += x_move * self.speed
+        # Keep player on screen on y-axis
         if self.y + y_move * self.speed < self.bottom_limit:
             self.y = self.bottom_limit
         elif self.y + self.h + y_move * self.speed > self.top_limit:
             self.y = self.top_limit - self.h
         else:
             self.y += y_move * self.speed
+        self.center = (self.x + (self.w / 2), self.y + (self.h / 2))
+        self.center_x = self.x + (self.w / 2)
+        self.center_y = self.y + (self.h / 2)
 
     def add_to_screen(self, screen):
         self.screen = screen
@@ -234,6 +288,7 @@ class Player(_Character):
         _Character.__init__(self, x, y, lives, speed, scale, image, appear, angle)
         self.weapons = weapons
         self.fist = pg.image.load('./images/fist.png')
+        self.fist_length = self.fist.get_width()
         self.is_player = True
         self.is_enemy = False
         self.last_punch = 0
@@ -270,16 +325,16 @@ class Player(_Character):
     def extra_life(self, life):
         self.lives += life
 
-    def fire(self, screen, keys):
+    def fire(self, screen, keys, duration=3, recovery=6):
         if keys['space']:
             time_since_fire = time.perf_counter() - self.last_punch
-            if self.weapons is None and (time_since_fire > 6):
+            if self.weapons is None and (time_since_fire > recovery):
 
                 rotated_fist, pos = fn.get_orbit(self, self.fist)
                 screen.blit(rotated_fist, pos)
                 self.last_punch = time.perf_counter()
                 self.punching = True
-            elif self.weapons is None and (time_since_fire < 3):
+            elif self.weapons is None and (time_since_fire < duration):
                 rotated_fist, pos = fn.get_orbit(self, self.fist)
                 screen.blit(rotated_fist, pos)
                 self.punching = True
@@ -303,6 +358,15 @@ class Enemy(_Character):
         self.is_player = False
         self.is_enemy = True
 
+    def add_to_screen(self, screen):
+        self.screen = screen
+        self.left_limit = screen.bounds.left
+        self.right_limit = screen.bounds.right
+        self.top_limit = screen.bounds.top
+        self.bottom_limit = screen.bounds.bottom
+        self.x = r.choice(self.right_limit - self.w)
+        self.y = r.choice(self.top_limit - self.h)
+
     def follow(self, other):
         if other.is_player:
             if self.x + (self.w / 2) < other.x + (other.w / 2):
@@ -314,12 +378,13 @@ class Enemy(_Character):
             elif self.y + (self.h / 2) > other.y + + (other.h / 2):
                 self._move(0, -1)
 
-    # def is_hit(self, obj):
-    #     if
-
-    def update(self, screen, others): #, vector): TODO blow back from get_hurt() based on angle
+    def update(self, screen, others):
         for other in others:
-            # if self.is_touching(other.fist)
+            #print(f"|\tpunch:{other.punching}\t|\tface:{fn.is_facing(other, self, 45)}\t|\trange:{fn.get_distance(self.center, other.center) <= other.fist_length + ((other.w + self.w) / 2)}\t|")
+            if other.punching and \
+                    fn.is_facing(other, self, 45) and \
+                    fn.get_distance(self.center, other.center) <= other.fist_length + ((other.w + self.w) / 2):
+                    self.get_hurt(damage=0, recovery=1, danger=other, blowback=50)
             if self.appear:
                 self.is_alive()
         self.follow(other)

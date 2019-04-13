@@ -32,8 +32,8 @@ def get_angle(origin_xy: tuple, satellite_xy: tuple, degrees: bool=True) -> floa
     """
     x1, y1 = origin_xy
     x2, y2 = satellite_xy
-    conversion = -((180 / m.pi) % 360)
-    return m.atan2(y2 - y1, x2 - x1) * (conversion if degrees else 1)
+    conversion = ((180 / m.pi) % 360)
+    return m.atan2(y2 - y1, x2 - x1) * (-conversion if degrees else 1)
 
 
 def is_inside(point: tuple, bounds) -> bool:
@@ -89,4 +89,45 @@ def get_orbit(planet, satellite, ratio_from_center=0.5, track=True):
     return rotated_satellite, pos
 
 
+def get_distance(point_a: tuple, point_b: tuple) -> float:
+    """
+    :param point_a:
+        x,y tuple representing the first object
+    :param point_b:
+        x,y tuple representing the second object
+    :return:
+        using the pythagorean theorem we get the distance
+        ((x1 - x2)^2 + (y1 - y2)^2)^0.5
+    """
+    a = point_a[0] - point_b[0]
+    b = point_a[1] - point_b[1]
+    return (a ** 2 + b ** 2) ** 0.5
+
+
+def is_facing(obj1: object, obj2: object, rng: float) -> bool:
+    """
+    :param obj1:
+        takes a _Character object
+    :param obj2:
+        takes another _Character object
+    :param rng:
+        float in degrees (0-180] (not radians)
+        will be added + and - to the first character's angle,
+        so 180 would mean no matter what it would consider
+        character 1 to be facing character 2
+    :return:
+        True or False
+        whether or not the first character's angle attribute
+        points in the direction of the second character's center within a range
+    """
+    angle = get_angle(obj1.center, obj2.center) % 360
+    if 0 < rng < 180:
+
+        return
+    elif rng >= 180:
+        return True
+    elif rng == 0:
+        return obj1.angle == angle
+    else:
+        raise Exception
 
