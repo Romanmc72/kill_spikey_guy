@@ -12,6 +12,8 @@ import os
 # TODO create weapons
 # TODO create projectiles
 # TODO create heat-seeking projectiles
+# TODO create animations with walking and fighting
+# TODO include audio sound-fx & songs based on package
 
 
 def get_package_option(spacing=10):
