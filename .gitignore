@@ -1,4 +1,4 @@
-.idea/**
-__pycahce__/**
+.idea/
+__pycache__/
 *.js
 *.html
