@@ -14,6 +14,9 @@ import os
 # TODO create heat-seeking projectiles
 # TODO create animations with walking and fighting
 # TODO include audio sound-fx & songs based on package
+# TODO Explore a /giphy API to see if insults can be paired with `.gifs`
+# TODO enable cheat codes to make the explicit and mean options auto-magic
+# TODO make a `meatspin` cheat if possible
 
 
 def get_package_option(spacing=10):
@@ -145,7 +148,7 @@ class Game:
 
     def show_score(self):
         font = pg.font.SysFont('Arial', 30)
-        text = font.render(f"Score: {self.score}", False, (0, 0, 0))
+        text = font.render(f"Score: {self.score}", False, (255, 255, 0))
         self.screen.blit(text, (self.center_x, 25))
 
     def play(self):
