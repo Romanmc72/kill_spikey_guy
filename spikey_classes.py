@@ -17,9 +17,11 @@ import os
 # TODO Explore a /giphy API to see if insults can be paired with `.gifs`
 # TODO enable cheat codes to make the explicit and mean options auto-magic
 # TODO make a `meatspin` cheat if possible
+# TODO allow reflexive resizing of images to ensure all games function the same
 
 
-def get_package_option(spacing=10):
+def get_package_option(spacing=10) -> list:
+    cheats = []
     options = os.listdir('./images')
     num_options = len(options)
     font = pg.font.SysFont('Times New Roman', 25)
@@ -30,7 +32,8 @@ def get_package_option(spacing=10):
     longest_option = max([option.get_width() for option in rendered_options])
     w = longest_option + 2 * spacing
     h = (rendered_option_height * num_options) + (spacing * (num_options + 1))
-    screen = pg.display.set_mode((w, h))
+    # screen = pg.display.set_mode((w, h))
+    screen = pg.display.set_mode((0, 0))
     screen.fill(0)
     [screen.blit(option, (spacing, spacing + (option_number * rendered_option_height)))
      for option_number, option in
@@ -73,7 +76,22 @@ def get_package_option(spacing=10):
                 elif event.key == pg.K_9 and num_options == 10:
                     option_number = 9
                     nothing_pressed = False
-    return options[option_number]
+                elif event.key == pg.K_c:
+                    cheats = cheat_menu()
+    return [options[option_number]] + cheats
+
+
+def cheat_menu() -> list:
+    cheating = True
+    cheats = []
+    while cheating:
+        code = [input("ENTER CHEAT CODE\n(enter 'q' to exit)\n: ")]
+        # if code == 'q':
+        if 'q' in code:
+            cheating = False
+        else:
+            cheats += code
+    return cheats
 
 
 class Package:
@@ -83,26 +101,26 @@ class Package:
     Packages are listed in the './images/ folder.
     """
     def __init__(self):
-        self.name = get_package_option()
+        pack = get_package_option()
+        self.name = pack[0]
         self.enemy = f'./images/{self.name}/enemy.png'
         self.player = f'./images/{self.name}/player.png'
         self.background = f'./images/{self.name}/background.png'
         self.fist = f'./images/{self.name}/fist.png'
+        self.cheats = pack[1:]
 
 
 class Game:
     def __init__(self,
                  done: bool = False,
-                 characters: list = [],
-                 mean: bool = False,
-                 explicit: bool = False) -> None:
+                 characters: list = []) -> None:
         pg.init()
         self.package = Package()
-        self.background = pg.image.load(self.package.background)
+        self.background = pg.transform.scale(pg.image.load(self.package.background), (800, 800))
         self.done = done
         self.characters = characters
-        self.mean = mean
-        self.explicit = explicit
+        self.mean = (True if ':(' in self.package.cheats else False)
+        self.explicit = (True if '>:(' in self.package.cheats else False)
         self.x = 0
         self.y = 0
         self.h = self.background.get_height()
@@ -121,6 +139,9 @@ class Game:
         self.center_x = self.center[0]
         self.center_y = self.center[1]
         self.score = 0
+        self.enemies = 1
+        print('mean') if self.mean else None
+        print('explicit') if self.explicit else None
 
     def add_character(self, character):
         self.characters.append(character)
@@ -130,8 +151,14 @@ class Game:
         self.characters.pop(self.characters.index(character))
         
     def update_characters(self):
-        enemies = [character for character in self.characters if character.is_enemy and character.appear]
-        players = [character for character in self.characters if character.is_player and character.appear]
+        # enemies = [character for character in self.characters if character.is_enemy and character.alive]
+        enemies = []
+        for index, character in enumerate(self.characters):
+            if character.is_enemy and character.alive:
+                enemies.append(character)
+            elif character.is_enemy and not character.alive:
+                self.characters.pop(index)
+        players = [character for character in self.characters if character.is_player and character.alive]
         for player in players:
             player.update(self.screen, self.key_state, enemies)
             for life in range(player.lives):
@@ -145,13 +172,23 @@ class Game:
         for player in players:
             if not player.alive:
                 self.done = True
+        if not enemies:
+            for additional in range(self.enemies):
+                enemy = Enemy(self.package.enemy, speed=r.choice(5))
+                self.add_character(enemy)
+            self.enemies += 1
 
     def show_score(self):
         font = pg.font.SysFont('Arial', 30)
-        text = font.render(f"Score: {self.score}", False, (255, 255, 0))
+        text = font.render(f"Score: {self.score}", False, (255, 0, 0))
         self.screen.blit(text, (self.center_x, 25))
 
     def play(self):
+        player = Player(self.package.player, self.package.fist)
+        enemy = Enemy(self.package.enemy)
+        self.add_character(player)
+        self.add_character(enemy)
+        self.enemies += 1
         while not self.done:
             for event in pg.event.get():
                 self.get_keys(event=event)
@@ -193,15 +230,7 @@ class Game:
             elif event.key == pg.K_SPACE:
                 self.key_state['space'] = False
 
-    # def hurl_insults(self):
-
-    # def hurl_meh(self):
-
-    # def hurl_impressed(self):
-
-    # def hurl_damns_son(self):
-
-    def __end__(self):
+    def hurl_insults(self):
         insults = ['Maybe next time']
         if self.mean:
             insults += ['You really suck at this',
@@ -229,7 +258,8 @@ class Game:
         game_over = font.render(f'GAME OVER, score:{self.score}', False, (255, 255, 0))
         esc = font.render('Press \'esc\' to exit.', False, (255, 255, 0))
         drop = game_over.get_height() + 10
-        words = [font.render(insult, False, (255, 255, 0)) for insult in [word for word in re.split(r'\s', (r.choice(insults)))]]
+        words = [font.render(insult, False, (255, 255, 0)) for insult in
+                 [word for word in re.split(r'\s', (r.choice(insults)))]]
         words.append(esc)
         self.done = False
         while not self.done:
@@ -244,6 +274,109 @@ class Game:
             self.screen.blit(game_over, (5, 5))
             [self.screen.blit(words[word], (5, words[word].get_height() * word + drop)) for word in range(len(words))]
             pg.display.flip()
+
+    def hurl_meh(self):
+        insults = ['I guess that was okay']
+        if self.mean:
+            insults += ['at least you tried this time',
+                        'I have see worse.',
+                        'Not totally disappointing',
+                        'I still think you could do better']
+        if self.explicit:
+            insults += ['Big fuckin woop',
+                        'Yeah you got a few points. You still a Bitch tho',
+                        'Not a total fucking failure',
+                        'almost a decent score, asshole.',
+                        'Choked a smaller dick this time']
+        font = pg.font.SysFont('Times New Roman', 25)
+        game_over = font.render(f'GAME OVER, score:{self.score}', False, (255, 255, 0))
+        esc = font.render('Press \'esc\' to exit.', False, (255, 255, 0))
+        drop = game_over.get_height() + 10
+        words = [font.render(insult, False, (255, 255, 0)) for insult in
+                 [word for word in re.split(r'\s', (r.choice(insults)))]]
+        words.append(esc)
+        self.done = False
+        while not self.done:
+            for event in pg.event.get():
+                self.get_keys(event=event)
+                if event.type == pg.QUIT:
+                    self.done = True
+                elif event.type == pg.KEYDOWN:
+                    if event.key == pg.K_ESCAPE:
+                        self.done = True
+            self.screen.fill(0)
+            self.screen.blit(game_over, (5, 5))
+            [self.screen.blit(words[word], (5, words[word].get_height() * word + drop)) for word in range(len(words))]
+            pg.display.flip()
+
+    def hurl_impressed(self):
+        insults = ['Nicely done']
+        if self.mean:
+            insults += ['I have nothing negative to say']
+        if self.explicit:
+            insults += ['Nice job. Bitch']
+        font = pg.font.SysFont('Times New Roman', 25)
+        game_over = font.render(f'GAME OVER, score:{self.score}', False, (255, 255, 0))
+        esc = font.render('Press \'esc\' to exit.', False, (255, 255, 0))
+        drop = game_over.get_height() + 10
+        words = [font.render(insult, False, (255, 255, 0)) for insult in
+                 [word for word in re.split(r'\s', (r.choice(insults)))]]
+        words.append(esc)
+        self.done = False
+        while not self.done:
+            for event in pg.event.get():
+                self.get_keys(event=event)
+                if event.type == pg.QUIT:
+                    self.done = True
+                elif event.type == pg.KEYDOWN:
+                    if event.key == pg.K_ESCAPE:
+                        self.done = True
+            self.screen.fill(0)
+            self.screen.blit(game_over, (5, 5))
+            [self.screen.blit(words[word], (5, words[word].get_height() * word + drop)) for word in range(len(words))]
+            pg.display.flip()
+
+    def hurl_damn_son(self):
+        insults = ['Speechless',
+                   '*standing-ovation*']
+        if self.mean:
+            insults += ['bet you feel proud of yourself',
+                        'Congrats on your huge waste of time',
+                        'Don\'t you have better things to do?']
+        if self.explicit:
+            insults += ['Damn son, you cheatin?',
+                        'You probably cheated, Bitch']
+        font = pg.font.SysFont('Times New Roman', 25)
+        game_over = font.render(f'GAME OVER, score:{self.score}', False, (255, 255, 0))
+        esc = font.render('Press \'esc\' to exit.', False, (255, 255, 0))
+        drop = game_over.get_height() + 10
+        words = [font.render(insult, False, (255, 255, 0)) for insult in
+                 [word for word in re.split(r'\s', (r.choice(insults)))]]
+        words.append(esc)
+        self.done = False
+        while not self.done:
+            for event in pg.event.get():
+                self.get_keys(event=event)
+                if event.type == pg.QUIT:
+                    self.done = True
+                elif event.type == pg.KEYDOWN:
+                    if event.key == pg.K_ESCAPE:
+                        self.done = True
+            self.screen.fill(0)
+            self.screen.blit(game_over, (5, 5))
+            [self.screen.blit(words[word], (5, words[word].get_height() * word + drop)) for word in range(len(words))]
+            pg.display.flip()
+
+    def __end__(self):
+        if self.score < 100:
+            self.hurl_insults()
+        elif 100 <= self.score < 200:
+            self.hurl_meh()
+        elif 200 <= self.score < 500:
+            self.hurl_impressed()
+        else:
+            self.hurl_damn_son()
+
         pg.quit()
         print('Game Over')
         sys.exit()
@@ -286,7 +419,7 @@ class _Character:
         self.lives = lives
         self.speed = speed
         self.scale = scale
-        self.image = pg.image.load(image)
+        self.image = pg.transform.scale(pg.image.load(image), (100, 100))
         self.appear = appear
         self.alive = True
         self.angle = angle
@@ -362,6 +495,9 @@ class _Character:
                 angle = fn.get_angle((danger.x + (danger.w / 2), danger.y + (danger.y / 2)),
                                      (self.x + (self.w / 2), self.y + (self.h / 2)), degrees=False)
                 self._move(blowback * m.cos(angle), blowback * m.sin(angle))
+            return True
+        else:
+            return False
 
     def is_touching(self, other):
         return fn.is_touching(self.bounds, other.bounds)
@@ -385,7 +521,7 @@ class Player(_Character):
                  weapons: list = None,
                  angle: float = 0) -> None:
         _Character.__init__(self, x, y, lives, speed, scale, image, appear, angle)
-        self.fist = pg.image.load(fist)
+        self.fist = pg.transform.scale(pg.image.load(fist), (50, 100))
         self.weapons = weapons
         self.fist_length = self.fist.get_width()
         self.is_player = True
@@ -411,7 +547,7 @@ class Player(_Character):
         for enemy in enemies:
             if self.appear:
                 if self.is_touching(enemy):
-                    self.get_hurt(1, recovery=1, danger=enemy, blowback=20)
+                    self.get_hurt(1, recovery=3, danger=enemy, blowback=20)
         self.is_alive()
         self._get_movement(keys)
         self._re_bound()
@@ -424,7 +560,7 @@ class Player(_Character):
     def extra_life(self, life):
         self.lives += life
 
-    def fire(self, screen, keys, duration=3, recovery=6):
+    def fire(self, screen, keys, duration=0.5, recovery=0):
         if keys['space']:
             time_since_fire = time.perf_counter() - self.last_punch
             if self.weapons is None and (time_since_fire > recovery):
@@ -494,8 +630,7 @@ class Enemy(_Character):
             if other.punching and \
                     fn.is_facing(other, self, 45) and \
                     fn.get_distance(self.center, other.center) <= other.fist_length + ((other.w + self.w) / 2):
-                    self.get_hurt(damage=1, recovery=1, danger=other, blowback=50)
-                    self.point = True
+                    self.point = self.get_hurt(damage=1, recovery=0, danger=other, blowback=50)
             if self.appear:
                 self.is_alive()
         self.follow(other)
@@ -528,3 +663,8 @@ class Projectile:
                                  y=self.y,
                                  w=self.w,
                                  h=self.h)
+
+
+class PowerUp:
+    def __init__(self, power):
+        self.power = power
