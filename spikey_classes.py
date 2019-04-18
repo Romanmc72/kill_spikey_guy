@@ -7,17 +7,17 @@ import numpy.random as r
 import re
 import os
 # from pg.locals import *
-# TODO generate enemies after they die
-# TODO set varying levels of comebacks after score is calculated
 # TODO create weapons
 # TODO create projectiles
 # TODO create heat-seeking projectiles
 # TODO create animations with walking and fighting
 # TODO include audio sound-fx & songs based on package
-# TODO Explore a /giphy API to see if insults can be paired with `.gifs`
-# TODO enable cheat codes to make the explicit and mean options auto-magic
+# TODO Include a `.gif` into the game somewhere
+# TODO break down a `.gif` into frames and animate it into reality
+# TODO allow reflexive resizing of images to ensure all games function the same despite what gets imported
 # TODO make a `meatspin` cheat if possible
-# TODO allow reflexive resizing of images to ensure all games function the same
+# TODO make safe zone in the middle of the screen so you don't get spawned on
+# TODO recovery health bar
 
 
 def get_package_option(spacing=10) -> list:
@@ -116,7 +116,7 @@ class Game:
                  characters: list = []) -> None:
         pg.init()
         self.package = Package()
-        self.background = pg.transform.scale(pg.image.load(self.package.background), (800, 800))
+        self.background = pg.transform.scale(pg.image.load(self.package.background), (1300, 650))
         self.done = done
         self.characters = characters
         self.mean = (True if ':(' in self.package.cheats else False)
@@ -151,13 +151,9 @@ class Game:
         self.characters.pop(self.characters.index(character))
         
     def update_characters(self):
-        # enemies = [character for character in self.characters if character.is_enemy and character.alive]
-        enemies = []
-        for index, character in enumerate(self.characters):
-            if character.is_enemy and character.alive:
-                enemies.append(character)
-            elif character.is_enemy and not character.alive:
-                self.characters.pop(index)
+        enemies = [character for character in self.characters if character.is_enemy and character.alive]
+        dead = [character for character in self.characters if character.is_enemy and not character.alive]
+        [self.remove_character(character) for character in dead[::-1]]
         players = [character for character in self.characters if character.is_player and character.alive]
         for player in players:
             player.update(self.screen, self.key_state, enemies)
@@ -165,8 +161,6 @@ class Game:
                 self.screen.blit(pg.transform.scale(player.image, (20, 20)), (25 + 20 * life, 25))
         for enemy in enemies:
             self.score += enemy.update(self.screen, players)
-            for life in range(enemy.lives):
-                self.screen.blit(pg.transform.scale(enemy.image, (20, 20)), (self.w - 25 - 20 * life, 25))
         if not players:
             self.done = True
         for player in players:
@@ -439,6 +433,8 @@ class _Character:
         self.right_limit = None
         self.top_limit = None
         self.bottom_limit = None
+        self.dangerous = False
+        self.alive_since = time.perf_counter()
 
     def is_alive(self):
         if self.lives > 0:
@@ -545,7 +541,7 @@ class Player(_Character):
 
     def update(self, screen, keys, enemies):
         for enemy in enemies:
-            if self.appear:
+            if self.appear and enemy.dangerous:
                 if self.is_touching(enemy):
                     self.get_hurt(1, recovery=3, danger=enemy, blowback=20)
         self.is_alive()
@@ -604,6 +600,7 @@ class Enemy(_Character):
         self.is_player = False
         self.is_enemy = True
         self.point = False
+        self.harmless_for = 1
 
     def add_to_screen(self, screen, x=None, y=None):
         self.screen = screen
@@ -626,6 +623,8 @@ class Enemy(_Character):
                 self._move(0, -1)
 
     def update(self, screen, others):
+        if time.perf_counter() - self.alive_since > self.harmless_for:
+            self.dangerous = True
         for other in others:
             if other.punching and \
                     fn.is_facing(other, self, 45) and \
@@ -668,3 +667,15 @@ class Projectile:
 class PowerUp:
     def __init__(self, power):
         self.power = power
+
+
+class HUDBar:
+    def __init__(self, start: float, maximum: float=100, minimum: float=0, percent: bool=True):
+        self.start = start
+        self.maximum = maximum
+        self.minimum = minimum
+        self.percent = percent
+        self.empty_color = (255, 0, 0)
+        self.full_color = (0, 255, 0)
+        self.over_charge_color = (0, 255, 255)
+
