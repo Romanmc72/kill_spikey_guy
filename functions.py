@@ -2,7 +2,7 @@ import pygame as pg
 import math as m
 
 
-def get_offset(original: object, changed: object) -> tuple:
+def get_offset(original, changed):
     """
     :param original:
         The original must be a pygame surface,
@@ -18,7 +18,7 @@ def get_offset(original: object, changed: object) -> tuple:
             (original.get_height() / 2) - (changed.get_height() / 2))
 
 
-def get_angle(origin_xy: tuple, satellite_xy: tuple, degrees: bool=True) -> float:
+def get_angle(origin_xy, satellite_xy, degrees = True):
     """
     :param origin_xy:
         a tuple of (x, y) coordinates for the object at the center
@@ -36,7 +36,7 @@ def get_angle(origin_xy: tuple, satellite_xy: tuple, degrees: bool=True) -> floa
     return (m.atan2(y2 - y1, x2 - x1) * (-conversion if degrees else 1)) % (360 if degrees else (2 * m.pi))
 
 
-def is_inside(point: tuple, bounds: object) -> bool:
+def is_inside(point, bounds):
     """
     :param point:
         an (x, y) coordinate tuple
@@ -50,7 +50,7 @@ def is_inside(point: tuple, bounds: object) -> bool:
             bounds.bottom <= point[1] <= bounds.top)
 
 
-def is_touching(obj1: object, obj2: object) -> bool:
+def is_touching(obj1, obj2):
     """
     :param obj1:
         an object that contains a Bounds class
@@ -70,7 +70,7 @@ def is_touching(obj1: object, obj2: object) -> bool:
     return True in touches
 
 
-def is_outside(obj1: object, obj2: object) -> bool:
+def is_outside(obj1, obj2):
     """
     :param obj1:
         an object that contains a Bounds class
@@ -124,7 +124,7 @@ def get_orbit(planet, satellite, ratio_from_center=0.5, track=True):
     return rotated_satellite, pos
 
 
-def get_distance(point_a: tuple, point_b: tuple) -> float:
+def get_distance(point_a, point_b):
     """
     :param point_a:
         (x, y) tuple representing the first object
@@ -139,7 +139,7 @@ def get_distance(point_a: tuple, point_b: tuple) -> float:
     return (a ** 2 + b ** 2) ** 0.5
 
 
-def is_facing(obj1: object, obj2: object, rng: float) -> bool:
+def is_facing(obj1, obj2, rng):
     """
     :param obj1:
         takes a _Character object
@@ -166,4 +166,3 @@ def is_facing(obj1: object, obj2: object, rng: float) -> bool:
         return obj1.angle == angle_between
     else:
         raise ValueError('Please use a rng where 0 <= rng')
-

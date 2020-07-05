@@ -7,7 +7,8 @@ import time as tm
 pygame.init()   #################
 #################################
 ###Images Representing Objects###
-PlayerImg = pygame.image.load("./images/circle.png")
+PlayerImg = pygame.draw.rect(pygame.rect(0, 10, 0 ,10))
+# PlayerImg = pygame.image.load("./images/circle.png")
 FieldImg = pygame.image.load("./images/room.png")
 SpikeyGuyImg = pygame.image.load("./images/sharp.png")
 FistImg =  pygame.image.load("./images/fist.png")

@@ -3,10 +3,9 @@ import functions as fn
 import sys
 import time
 import math as m
-import numpy.random as r
+import random as r
 import re
 import os
-# from pg.locals import *
 # TODO create weapons
 # TODO create projectiles
 # TODO create heat-seeking projectiles
@@ -19,21 +18,26 @@ import os
 # TODO make safe zone in the middle of the screen so you don't get spawned on
 # TODO recovery health bar
 
+DEFAULT_WIDTH = 1300
+DEFAULT_HEIGHT = 650
 
-def get_package_option(spacing=10) -> list:
+
+def get_package_option(spacing=10):
     cheats = []
     options = os.listdir('./images')
     num_options = len(options)
     font = pg.font.SysFont('Times New Roman', 25)
-    rendered_options = [font.render(f'[{option_number}] : {option}', False, (255, 255, 0))
+    rendered_options = [font.render('[{option_number}] : {option}'.format(option_number=option_number, option=option), False, (255, 255, 0))
                         for option_number, option in
                         enumerate(options)]
     rendered_option_height = rendered_options[0].get_height()
     longest_option = max([option.get_width() for option in rendered_options])
-    w = longest_option + 2 * spacing
-    h = (rendered_option_height * num_options) + (spacing * (num_options + 1))
-    # screen = pg.display.set_mode((w, h))
-    screen = pg.display.set_mode((0, 0))
+    #w = longest_option + 2 * spacing
+    #h = (rendered_option_height * num_options) + (spacing * (num_options + 1))
+    w = DEFAULT_WIDTH
+    h = DEFAULT_HEIGHT
+    screen = pg.display.set_mode((w, h))
+    #screen = pg.display.set_mode((0, 0))
     screen.fill(0)
     [screen.blit(option, (spacing, spacing + (option_number * rendered_option_height)))
      for option_number, option in
@@ -81,7 +85,7 @@ def get_package_option(spacing=10) -> list:
     return [options[option_number]] + cheats
 
 
-def cheat_menu() -> list:
+def cheat_menu():
     cheating = True
     cheats = []
     while cheating:
@@ -103,28 +107,29 @@ class Package:
     def __init__(self):
         pack = get_package_option()
         self.name = pack[0]
-        self.enemy = f'./images/{self.name}/enemy.png'
-        self.player = f'./images/{self.name}/player.png'
-        self.background = f'./images/{self.name}/background.png'
-        self.fist = f'./images/{self.name}/fist.png'
+        self.enemy = './images/{}/enemy.png'.format(self.name)
+        self.player = './images/{}/player.png'.format(self.name)
+        self.background = './images/{}/background.png'.format(self.name)
+        self.fist = './images/{}/fist.png'.format(self.name)
         self.cheats = pack[1:]
 
 
 class Game:
     def __init__(self,
-                 done: bool = False,
-                 characters: list = []) -> None:
+                 done = False,
+                 characters = []):
         pg.init()
+        self.x = 0
+        self.y = 0
+        self.w = DEFAULT_WIDTH
+        self.h = DEFAULT_HEIGHT
         self.package = Package()
-        self.background = pg.transform.scale(pg.image.load(self.package.background), (1300, 650))
+        self.background = pg.transform.scale(pg.image.load(self.package.background), (self.w, self.h))
+
         self.done = done
         self.characters = characters
         self.mean = (True if ':(' in self.package.cheats else False)
         self.explicit = (True if '>:(' in self.package.cheats else False)
-        self.x = 0
-        self.y = 0
-        self.h = self.background.get_height()
-        self.w = self.background.get_width()
         self.screen = pg.display.set_mode((self.w, self.h))
         self.key_state = {'left': 0,
                           'right': 0,
@@ -149,7 +154,7 @@ class Game:
 
     def remove_character(self, character):
         self.characters.pop(self.characters.index(character))
-        
+
     def update_characters(self):
         enemies = [character for character in self.characters if character.is_enemy and character.alive]
         dead = [character for character in self.characters if character.is_enemy and not character.alive]
@@ -168,13 +173,13 @@ class Game:
                 self.done = True
         if not enemies:
             for additional in range(self.enemies):
-                enemy = Enemy(self.package.enemy, speed=r.choice(5))
+                enemy = Enemy(self.package.enemy, speed=r.choice(range(1, 5)))
                 self.add_character(enemy)
             self.enemies += 1
 
     def show_score(self):
         font = pg.font.SysFont('Arial', 30)
-        text = font.render(f"Score: {self.score}", False, (255, 0, 0))
+        text = font.render("Score: {}".format(self.score), False, (255, 0, 0))
         self.screen.blit(text, (self.center_x, 25))
 
     def play(self):
@@ -183,6 +188,7 @@ class Game:
         self.add_character(player)
         self.add_character(enemy)
         self.enemies += 1
+        pg.display.set_mode((self.w, self.h))
         while not self.done:
             for event in pg.event.get():
                 self.get_keys(event=event)
@@ -191,12 +197,13 @@ class Game:
                 elif event.type == pg.KEYDOWN:
                     if event.key == pg.K_ESCAPE:
                         self.done = True
-            self.screen.fill(0)
+            self.screen.fill([0, 0, 0])
             self.screen.blit(self.background, (0, 0))
-            self.screen.blit(self.background, (0, 0))
+            # self.screen.blit(self.background, self.background_rect)
             self.update_characters()
             self.show_score()
             pg.display.flip()
+            pg.display.update()
 
         self.__end__()
 
@@ -249,7 +256,7 @@ class Game:
                         'fuck you motherfucker',
                         'u piece of shit']
         font = pg.font.SysFont('Times New Roman', 25)
-        game_over = font.render(f'GAME OVER, score:{self.score}', False, (255, 255, 0))
+        game_over = font.render('GAME OVER, score:{}'.format(self.score), False, (255, 255, 0))
         esc = font.render('Press \'esc\' to exit.', False, (255, 255, 0))
         drop = game_over.get_height() + 10
         words = [font.render(insult, False, (255, 255, 0)) for insult in
@@ -283,7 +290,7 @@ class Game:
                         'almost a decent score, asshole.',
                         'Choked a smaller dick this time']
         font = pg.font.SysFont('Times New Roman', 25)
-        game_over = font.render(f'GAME OVER, score:{self.score}', False, (255, 255, 0))
+        game_over = font.render('GAME OVER, score:{}'.format(self.score), False, (255, 255, 0))
         esc = font.render('Press \'esc\' to exit.', False, (255, 255, 0))
         drop = game_over.get_height() + 10
         words = [font.render(insult, False, (255, 255, 0)) for insult in
@@ -310,7 +317,7 @@ class Game:
         if self.explicit:
             insults += ['Nice job. Bitch']
         font = pg.font.SysFont('Times New Roman', 25)
-        game_over = font.render(f'GAME OVER, score:{self.score}', False, (255, 255, 0))
+        game_over = font.render('GAME OVER, score:{}'.format(self.score), False, (255, 255, 0))
         esc = font.render('Press \'esc\' to exit.', False, (255, 255, 0))
         drop = game_over.get_height() + 10
         words = [font.render(insult, False, (255, 255, 0)) for insult in
@@ -341,7 +348,7 @@ class Game:
             insults += ['Damn son, you cheatin?',
                         'You probably cheated, Bitch']
         font = pg.font.SysFont('Times New Roman', 25)
-        game_over = font.render(f'GAME OVER, score:{self.score}', False, (255, 255, 0))
+        game_over = font.render('GAME OVER, score:{}'.format(self.score), False, (255, 255, 0))
         esc = font.render('Press \'esc\' to exit.', False, (255, 255, 0))
         drop = game_over.get_height() + 10
         words = [font.render(insult, False, (255, 255, 0)) for insult in
@@ -400,14 +407,14 @@ class _Character:
     or use this class
     """
     def __init__(self,
-                 x: float,
-                 y: float,
-                 lives: int,
-                 speed: int,
-                 scale: float,
-                 image: str,
-                 appear: bool,
-                 angle: float) -> None:
+                 x,
+                 y,
+                 lives,
+                 speed,
+                 scale,
+                 image,
+                 appear,
+                 angle):
         self.x = x
         self.y = y
         self.lives = lives
@@ -506,16 +513,16 @@ class Player(_Character):
     only required input is the image to represent this player
     """
     def __init__(self,
-                 image: str,
-                 fist: str,
-                 speed: int = 5,
-                 scale: float = 1.0,
-                 appear: bool = True,
-                 x: float = 300.0,
-                 y: float = 300.0,
-                 lives: int = 3,
-                 weapons: list = None,
-                 angle: float = 0) -> None:
+                 image,
+                 fist,
+                 speed = 5,
+                 scale = 1.0,
+                 appear = True,
+                 x = 300.0,
+                 y = 300.0,
+                 lives = 3,
+                 weapons = None,
+                 angle = 0):
         _Character.__init__(self, x, y, lives, speed, scale, image, appear, angle)
         self.fist = pg.transform.scale(pg.image.load(fist), (50, 100))
         self.weapons = weapons
@@ -524,7 +531,7 @@ class Player(_Character):
         self.is_enemy = False
         self.last_punch = 0
         self.punching = False
-    
+
     def _rotation_degrees(self):
         center = (self.x + self.w / 2, self.y + self.h / 2)
         self.angle = fn.get_angle(center, pg.mouse.get_pos())
@@ -608,8 +615,8 @@ class Enemy(_Character):
         self.right_limit = screen.bounds.right
         self.top_limit = screen.bounds.top
         self.bottom_limit = screen.bounds.bottom
-        self.x = (r.choice(self.right_limit - self.w) if x is None else x)
-        self.y = (r.choice(self.top_limit - self.h) if y is None else y)
+        self.x = (r.randint(0, self.right_limit - self.w) if x is None else x)
+        self.y = (r.randint(0, self.top_limit - self.h) if y is None else y)
 
     def follow(self, other):
         if other.is_player:
@@ -670,7 +677,7 @@ class PowerUp:
 
 
 class HUDBar:
-    def __init__(self, start: float, maximum: float=100, minimum: float=0, percent: bool=True):
+    def __init__(self, start, maximum = 100, minimum = 0, percent = True):
         self.start = start
         self.maximum = maximum
         self.minimum = minimum

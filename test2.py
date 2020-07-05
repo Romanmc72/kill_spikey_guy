@@ -34,7 +34,7 @@ def blitRotate(surf, image, pos, originPos, angle):
     pygame.draw.rect (surf, (255, 0, 0), (*origin, *rotated_image.get_size()),2)
 
 
-font = pygame.font.SysFont('Times New Roman', 50)
+font = pygame.font.SysFont('Helvetica', 50)
 text = font.render('image', False, (255, 255, 0))
 image = pygame.Surface((text.get_width()+1, text.get_height()+1))
 pygame.draw.rect(image, (0, 0, 255), (1, 1, *text.get_size()))
