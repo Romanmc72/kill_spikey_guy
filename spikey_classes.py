@@ -1,11 +1,14 @@
-import pygame as pg
-import functions as fn
 import sys
 import time
 import math as m
 import random as r
 import re
 import os
+
+import pygame as pg
+
+import spikey_messages
+import functions as fn
 # TODO create weapons
 # TODO create projectiles
 # TODO create heat-seeking projectiles
@@ -209,144 +212,45 @@ class Game:
 
     def get_keys(self, event):
         if event.type == pg.KEYDOWN:
-            if event.key == pg.K_d:
+            if event.key in [pg.K_d, pg.K_RIGHT]:
                 self.key_state['right'] = True
-            elif event.key == pg.K_a:
+            elif event.key in [pg.K_a, pg.K_LEFT]:
                 self.key_state['left'] = True
-            elif event.key == pg.K_w:
+            elif event.key in [pg.K_w, pg.K_UP]:
                 self.key_state['up'] = True
-            elif event.key == pg.K_s:
+            elif event.key in [pg.K_s, pg.K_DOWN]:
                 self.key_state['down'] = True
             elif event.key == pg.K_SPACE:
                 self.key_state['space'] = True
         elif event.type == pg.KEYUP:
-            if event.key == pg.K_d:
+            if event.key in [pg.K_d, pg.K_RIGHT]:
                 self.key_state['right'] = False
-            elif event.key == pg.K_a:
+            elif event.key in [pg.K_a, pg.K_LEFT]:
                 self.key_state['left'] = False
-            elif event.key == pg.K_w:
+            elif event.key in [pg.K_w, pg.K_UP]:
                 self.key_state['up'] = False
-            elif event.key == pg.K_s:
+            elif event.key in [pg.K_s, pg.K_DOWN]:
                 self.key_state['down'] = False
             elif event.key == pg.K_SPACE:
                 self.key_state['space'] = False
 
-    def hurl_insults(self):
-        insults = ['Maybe next time']
-        if self.mean:
-            insults += ['You really suck at this',
-                        'The worst performance in the history of performances. Ever.',
-                        'Awful',
-                        'Disgraceful!',
-                        'You call that trying?',
-                        'BOOOOO YOU STINK!!!',
-                        'I\'ve never seen worse',
-                        'Nice try. NOT!',
-                        'ha ha',
-                        'Loser',
-                        'You gonna cry? :(',
-                        'It\'s like you don\'t even care...']
+    def _display_end_game_message(self):
         if self.explicit:
-            insults += ['Eat it bitch',
-                        'Fuck outta here if you gonna sucka dick',
-                        'Choked a big one',
-                        'u suck ass',
-                        'shitty performance',
-                        'Bitch',
-                        'fuck you motherfucker',
-                        'u piece of shit']
-        font = pg.font.SysFont('Times New Roman', 25)
-        game_over = font.render('GAME OVER, score:{}'.format(self.score), False, (255, 255, 0))
-        esc = font.render('Press \'esc\' to exit.', False, (255, 255, 0))
-        drop = game_over.get_height() + 10
-        words = [font.render(insult, False, (255, 255, 0)) for insult in
-                 [word for word in re.split(r'\s', (r.choice(insults)))]]
-        words.append(esc)
-        self.done = False
-        while not self.done:
-            for event in pg.event.get():
-                self.get_keys(event=event)
-                if event.type == pg.QUIT:
-                    self.done = True
-                elif event.type == pg.KEYDOWN:
-                    if event.key == pg.K_ESCAPE:
-                        self.done = True
-            self.screen.fill(0)
-            self.screen.blit(game_over, (5, 5))
-            [self.screen.blit(words[word], (5, words[word].get_height() * word + drop)) for word in range(len(words))]
-            pg.display.flip()
+            insults = spikey_messages.explicit_message
+        elif self.mean:
+            insults = spikey_messages.mean_message
+        else:
+            insults = spikey_messages.normal_message
+        
+        if self.score < 100:
+            insults = insults.insult
+        elif 100 <= self.score < 200:
+            insults = insults.meh
+        elif 200 <= self.score < 500:
+            insults = insults.impressed
+        else:
+            insults.damn_son
 
-    def hurl_meh(self):
-        insults = ['I guess that was okay']
-        if self.mean:
-            insults += ['at least you tried this time',
-                        'I have see worse.',
-                        'Not totally disappointing',
-                        'I still think you could do better']
-        if self.explicit:
-            insults += ['Big fuckin woop',
-                        'Yeah you got a few points. You still a Bitch tho',
-                        'Not a total fucking failure',
-                        'almost a decent score, asshole.',
-                        'Choked a smaller dick this time']
-        font = pg.font.SysFont('Times New Roman', 25)
-        game_over = font.render('GAME OVER, score:{}'.format(self.score), False, (255, 255, 0))
-        esc = font.render('Press \'esc\' to exit.', False, (255, 255, 0))
-        drop = game_over.get_height() + 10
-        words = [font.render(insult, False, (255, 255, 0)) for insult in
-                 [word for word in re.split(r'\s', (r.choice(insults)))]]
-        words.append(esc)
-        self.done = False
-        while not self.done:
-            for event in pg.event.get():
-                self.get_keys(event=event)
-                if event.type == pg.QUIT:
-                    self.done = True
-                elif event.type == pg.KEYDOWN:
-                    if event.key == pg.K_ESCAPE:
-                        self.done = True
-            self.screen.fill(0)
-            self.screen.blit(game_over, (5, 5))
-            [self.screen.blit(words[word], (5, words[word].get_height() * word + drop)) for word in range(len(words))]
-            pg.display.flip()
-
-    def hurl_impressed(self):
-        insults = ['Nicely done']
-        if self.mean:
-            insults += ['I have nothing negative to say']
-        if self.explicit:
-            insults += ['Nice job. Bitch']
-        font = pg.font.SysFont('Times New Roman', 25)
-        game_over = font.render('GAME OVER, score:{}'.format(self.score), False, (255, 255, 0))
-        esc = font.render('Press \'esc\' to exit.', False, (255, 255, 0))
-        drop = game_over.get_height() + 10
-        words = [font.render(insult, False, (255, 255, 0)) for insult in
-                 [word for word in re.split(r'\s', (r.choice(insults)))]]
-        words.append(esc)
-        self.done = False
-        while not self.done:
-            for event in pg.event.get():
-                self.get_keys(event=event)
-                if event.type == pg.QUIT:
-                    self.done = True
-                elif event.type == pg.KEYDOWN:
-                    if event.key == pg.K_ESCAPE:
-                        self.done = True
-            self.screen.fill(0)
-            self.screen.blit(game_over, (5, 5))
-            [self.screen.blit(words[word], (5, words[word].get_height() * word + drop)) for word in range(len(words))]
-            pg.display.flip()
-
-    def hurl_damn_son(self):
-        insults = ['Speechless',
-                   '*standing-ovation*']
-        if self.mean:
-            insults += ['bet you feel proud of yourself',
-                        'Congrats on your huge waste of time',
-                        'Don\'t you have better things to do?']
-        if self.explicit:
-            insults += ['Damn son, you cheatin?',
-                        'You probably cheated, Bitch']
         font = pg.font.SysFont('Times New Roman', 25)
         game_over = font.render('GAME OVER, score:{}'.format(self.score), False, (255, 255, 0))
         esc = font.render('Press \'esc\' to exit.', False, (255, 255, 0))
@@ -369,15 +273,7 @@ class Game:
             pg.display.flip()
 
     def __end__(self):
-        if self.score < 100:
-            self.hurl_insults()
-        elif 100 <= self.score < 200:
-            self.hurl_meh()
-        elif 200 <= self.score < 500:
-            self.hurl_impressed()
-        else:
-            self.hurl_damn_son()
-
+        self._display_end_game_message()
         pg.quit()
         print('Game Over')
         sys.exit()
@@ -485,7 +381,7 @@ class _Character:
         self.top_limit = screen.bounds.top
         self.bottom_limit = screen.bounds.bottom
 
-    def get_hurt(self, damage, recovery=3, danger=None, blowback=5):  # TODO keep player on screen
+    def get_hurt(self, damage, recovery=3, danger=None, blowback=5):
         time_since_hurt = time.perf_counter() - self.last_hurt
         if time_since_hurt > recovery:
             self.lives -= damage
