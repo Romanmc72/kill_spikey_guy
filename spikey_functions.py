@@ -1,3 +1,7 @@
+#!/usr/bin/env python3
+"""
+Storing some reusable functions here.
+"""
 import pygame as pg
 import math as m
 

@@ -1,3 +1,8 @@
+#!/usr/bin/env python3
+"""
+This is a hodgepodge of classes and objects necessary for the game.
+There is much to add and much refactoring to do, but it works so that is happy.
+"""
 import sys
 import time
 import math as m
@@ -8,7 +13,7 @@ import os
 import pygame as pg
 
 import spikey_messages
-import functions as fn
+import spikey_functions as fn
 # TODO create weapons
 # TODO create projectiles
 # TODO create heat-seeking projectiles
@@ -25,82 +30,6 @@ DEFAULT_WIDTH = 1300
 DEFAULT_HEIGHT = 650
 
 
-def get_package_option(spacing=10):
-    cheats = []
-    options = os.listdir('./images')
-    num_options = len(options)
-    font = pg.font.SysFont('Times New Roman', 25)
-    rendered_options = [font.render('[{option_number}] : {option}'.format(option_number=option_number, option=option), False, (255, 255, 0))
-                        for option_number, option in
-                        enumerate(options)]
-    rendered_option_height = rendered_options[0].get_height()
-    longest_option = max([option.get_width() for option in rendered_options])
-    #w = longest_option + 2 * spacing
-    #h = (rendered_option_height * num_options) + (spacing * (num_options + 1))
-    w = DEFAULT_WIDTH
-    h = DEFAULT_HEIGHT
-    screen = pg.display.set_mode((w, h))
-    #screen = pg.display.set_mode((0, 0))
-    screen.fill(0)
-    [screen.blit(option, (spacing, spacing + (option_number * rendered_option_height)))
-     for option_number, option in
-     enumerate(rendered_options)]
-    pg.display.flip()
-    nothing_pressed = True
-    while nothing_pressed:
-        for event in pg.event.get():
-            if event.type == pg.KEYDOWN:
-                if event.key == pg.K_ESCAPE:
-                    pg.quit()
-                    sys.exit()
-                elif event.key == pg.K_0 and num_options > 0:
-                    option_number = 0
-                    nothing_pressed = False
-                elif event.key == pg.K_1 and num_options > 1:
-                    option_number = 1
-                    nothing_pressed = False
-                elif event.key == pg.K_2 and num_options > 2:
-                    option_number = 2
-                    nothing_pressed = False
-                elif event.key == pg.K_3 and num_options > 3:
-                    option_number = 3
-                    nothing_pressed = False
-                elif event.key == pg.K_4 and num_options > 4:
-                    option_number = 4
-                    nothing_pressed = False
-                elif event.key == pg.K_5 and num_options > 5:
-                    option_number = 5
-                    nothing_pressed = False
-                elif event.key == pg.K_6 and num_options > 6:
-                    option_number = 6
-                    nothing_pressed = False
-                elif event.key == pg.K_7 and num_options > 7:
-                    option_number = 7
-                    nothing_pressed = False
-                elif event.key == pg.K_8 and num_options > 8:
-                    option_number = 8
-                    nothing_pressed = False
-                elif event.key == pg.K_9 and num_options == 10:
-                    option_number = 9
-                    nothing_pressed = False
-                elif event.key == pg.K_c:
-                    cheats = cheat_menu()
-    return [options[option_number]] + cheats
-
-
-def cheat_menu():
-    cheating = True
-    cheats = []
-    while cheating:
-        code = [input("ENTER CHEAT CODE\n(enter 'q' to exit)\n: ")]
-        # if code == 'q':
-        if 'q' in code:
-            cheating = False
-        else:
-            cheats += code
-    return cheats
-
-
 class Package:
     """
     which set of images will be imported for this game?
@@ -108,7 +37,7 @@ class Package:
     Packages are listed in the './images/ folder.
     """
     def __init__(self):
-        pack = get_package_option()
+        pack = self.get_package_option()
         self.name = pack[0]
         self.enemy = './images/{}/enemy.png'.format(self.name)
         self.player = './images/{}/player.png'.format(self.name)
@@ -116,6 +45,76 @@ class Package:
         self.fist = './images/{}/fist.png'.format(self.name)
         self.cheats = pack[1:]
 
+    def get_package_option(self, spacing=10):
+        cheats = []
+        options = os.listdir('./images')
+        num_options = len(options)
+        font = pg.font.SysFont('Times New Roman', 25)
+        rendered_options = [font.render('[{option_number}] : {option}'.format(option_number=option_number, option=option), False, (255, 255, 0))
+                            for option_number, option in
+                            enumerate(options)]
+        rendered_option_height = rendered_options[0].get_height()
+        longest_option = max([option.get_width() for option in rendered_options])
+        w = DEFAULT_WIDTH
+        h = DEFAULT_HEIGHT
+        screen = pg.display.set_mode((w, h))
+        screen.fill(0)
+        [screen.blit(option, (spacing, spacing + (option_number * rendered_option_height)))
+        for option_number, option in
+        enumerate(rendered_options)]
+        pg.display.flip()
+        nothing_pressed = True
+        while nothing_pressed:
+            for event in pg.event.get():
+                if event.type == pg.KEYDOWN:
+                    if event.key == pg.K_ESCAPE:
+                        pg.quit()
+                        sys.exit()
+                    elif event.key == pg.K_0 and num_options > 0:
+                        option_number = 0
+                        nothing_pressed = False
+                    elif event.key == pg.K_1 and num_options > 1:
+                        option_number = 1
+                        nothing_pressed = False
+                    elif event.key == pg.K_2 and num_options > 2:
+                        option_number = 2
+                        nothing_pressed = False
+                    elif event.key == pg.K_3 and num_options > 3:
+                        option_number = 3
+                        nothing_pressed = False
+                    elif event.key == pg.K_4 and num_options > 4:
+                        option_number = 4
+                        nothing_pressed = False
+                    elif event.key == pg.K_5 and num_options > 5:
+                        option_number = 5
+                        nothing_pressed = False
+                    elif event.key == pg.K_6 and num_options > 6:
+                        option_number = 6
+                        nothing_pressed = False
+                    elif event.key == pg.K_7 and num_options > 7:
+                        option_number = 7
+                        nothing_pressed = False
+                    elif event.key == pg.K_8 and num_options > 8:
+                        option_number = 8
+                        nothing_pressed = False
+                    elif event.key == pg.K_9 and num_options == 10:
+                        option_number = 9
+                        nothing_pressed = False
+                    elif event.key == pg.K_c:
+                        cheats = self.cheat_menu()
+        return [options[option_number]] + cheats
+
+    def cheat_menu(self):
+        cheating = True
+        cheats = []
+        while cheating:
+            code = [input("ENTER CHEAT CODE\n(enter 'q' to exit)\n: ")]
+            # if code == 'q':
+            if 'q' in code:
+                cheating = False
+            else:
+                cheats += code
+        return cheats
 
 class Game:
     def __init__(self,
